@@ -4,6 +4,7 @@ import streamlit as st
 
 from ai_analyzer import analyze_rule_based, analyze_with_openai, has_openai_api_key
 from audio_transcriber import format_timestamp, transcribe_audio
+from notion_exporter import export_analysis_to_notion
 
 
 TranscriptSegment = dict[str, str | float]
@@ -79,6 +80,15 @@ if "transcript_segments" not in st.session_state:
 if "transcript_text" not in st.session_state:
     st.session_state["transcript_text"] = ""
 
+if "analysis" not in st.session_state:
+    st.session_state["analysis"] = None
+
+if "analysis_source_text" not in st.session_state:
+    st.session_state["analysis_source_text"] = ""
+
+if "analysis_transcript_segments" not in st.session_state:
+    st.session_state["analysis_transcript_segments"] = []
+
 uploaded_file = st.file_uploader(
     "Upload meeting notes",
     type=["txt", "md"],
@@ -93,6 +103,9 @@ if uploaded_file is not None:
         )
         st.session_state["transcript_segments"] = []
         st.session_state["transcript_text"] = ""
+        st.session_state["analysis"] = None
+        st.session_state["analysis_source_text"] = ""
+        st.session_state["analysis_transcript_segments"] = []
         st.session_state["last_text_file"] = text_file_signature
 
     st.caption(f"Uploaded file: {uploaded_file.name}")
@@ -121,6 +134,9 @@ if uploaded_audio is not None:
                 st.session_state["meeting_notes"] = transcript_text
                 st.session_state["transcript_text"] = transcript_text
                 st.session_state["transcript_segments"] = transcript_segments
+                st.session_state["analysis"] = None
+                st.session_state["analysis_source_text"] = ""
+                st.session_state["analysis_transcript_segments"] = []
                 st.session_state["last_audio_file"] = audio_file_signature
             except Exception as error:
                 st.error(
@@ -176,27 +192,49 @@ if st.button("Analyze", type="primary"):
         else:
             analysis = analyze_rule_based(meeting_notes)
 
-        st.subheader("Summary")
-        st.write(analysis["summary"])
+        st.session_state["analysis"] = analysis
+        st.session_state["analysis_source_text"] = meeting_notes
+        st.session_state["analysis_transcript_segments"] = current_transcript_segments
 
-        st.subheader("Key decisions")
-        render_list(analysis["key_decisions"])
+analysis = (
+    st.session_state["analysis"]
+    if meeting_notes == st.session_state.get("analysis_source_text")
+    else None
+)
 
-        st.subheader("Action items")
-        render_list(analysis["action_items"])
+if analysis:
+    st.subheader("Summary")
+    st.write(analysis["summary"])
 
-        st.subheader("Risks")
-        render_list(analysis["risks"])
+    st.subheader("Key decisions")
+    render_list(analysis["key_decisions"])
 
-        st.subheader("Open questions")
-        render_list(analysis["open_questions"])
+    st.subheader("Action items")
+    render_list(analysis["action_items"])
 
-        report = build_markdown_report(analysis, current_transcript_segments)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    st.subheader("Risks")
+    render_list(analysis["risks"])
 
-        st.download_button(
-            "Download Report",
-            data=report,
-            file_name=f"meeting_report_{timestamp}.md",
-            mime="text/markdown",
+    st.subheader("Open questions")
+    render_list(analysis["open_questions"])
+
+    analysis_transcript_segments = st.session_state["analysis_transcript_segments"]
+    report = build_markdown_report(analysis, analysis_transcript_segments)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+
+    st.download_button(
+        "Download Report",
+        data=report,
+        file_name=f"meeting_report_{timestamp}.md",
+        mime="text/markdown",
+    )
+
+    if st.button("Export to Notion"):
+        result = export_analysis_to_notion(
+            analysis,
+            transcript_segments=analysis_transcript_segments,
         )
+        if result["success"]:
+            st.success(f"Exported to Notion: {result['url']}")
+        else:
+            st.error(result["error"])

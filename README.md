@@ -12,6 +12,7 @@ The current version supports rule-based analysis by default and includes OpenAI 
 - Review timestamped transcript segments for audio uploads.
 - Analyze notes using a simple rule-based analyzer with PM Analysis 2.0 risk extraction.
 - Optional OpenAI analysis mode with rule-based fallback.
+- Simple Notion export to a child page under a configured parent page.
 - Extract and display:
   - Summary
   - Key decisions
@@ -20,6 +21,7 @@ The current version supports rule-based analysis by default and includes OpenAI 
   - Open questions
 - Download the analysis as a Markdown report.
 - Include timestamped audio transcripts in Markdown reports when available.
+- Export the analysis to Notion when local Notion settings are configured.
 - Keep secrets out of source control with `.env.example` and `.gitignore`.
 
 ## Architecture
@@ -117,6 +119,15 @@ OPENAI_API_KEY=your_api_key_here
 
 The app works without an API key by using rule-based analysis.
 
+6. Optional: configure Notion export.
+
+Create a Notion integration, copy its internal integration token into `.env`, share the target Notion page with that integration, and copy the target page ID into `.env`:
+
+```env
+NOTION_TOKEN=your_notion_integration_token_here
+NOTION_PARENT_PAGE_ID=your_notion_parent_page_id_here
+```
+
 ## Usage
 
 1. Start the Streamlit app:
@@ -145,6 +156,8 @@ streamlit run app.py
 
 8. Click `Download Report` to export the results as a Markdown file.
 
+9. If Notion is configured, click `Export to Notion` to create a child page under the configured parent page.
+
 ## Future Roadmap
 
 - Improve summary quality and formatting.
@@ -162,6 +175,7 @@ streamlit run app.py
 - Python
 - Streamlit
 - OpenAI Python SDK
+- Notion Python SDK
 - Open-source Whisper
 - PyTorch
 - python-dotenv
@@ -186,3 +200,4 @@ ai-pm-assistant/
 - `.env.example` is tracked so other contributors know which environment variables are required.
 - The default rule-based analyzer keeps the MVP usable without paid API access or external services.
 - Audio transcription runs locally, but the first Whisper run may download the selected model.
+- Notion export is optional and uses only local `.env` configuration.

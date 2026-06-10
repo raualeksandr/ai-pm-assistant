@@ -3,3 +3,4 @@ python-dotenv
 openai
 openai-whisper
 torch
+notion-client

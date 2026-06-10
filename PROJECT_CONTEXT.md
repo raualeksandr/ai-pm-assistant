@@ -4,15 +4,16 @@
 
 AI PM Assistant is a lightweight project-management assistant for turning meeting notes into practical follow-up artifacts. The MVP is aimed at project managers, product managers, business analysts, recruiters, and other coordination-heavy roles that need to quickly extract summaries, decisions, action items, risks, and unresolved questions from raw meeting notes.
 
-The product direction is intentionally pragmatic: keep the app usable without paid AI access, while allowing higher-quality AI analysis when an OpenAI API key is configured locally.
+The product direction is intentionally pragmatic: keep the app usable without paid AI access, while allowing higher-quality AI analysis and simple Notion export when optional local credentials are configured.
 
 ## 2. Current architecture
 
-The application is a small Python Streamlit app with three main modules:
+The application is a small Python Streamlit app with four main modules:
 
 - `app.py`: Streamlit UI, upload controls, analysis mode selection, results rendering, and Markdown report download.
 - `ai_analyzer.py`: rule-based analysis, optional OpenAI analysis, API key loading, and normalization of model output.
 - `audio_transcriber.py`: local Whisper model loading and audio transcription.
+- `notion_exporter.py`: optional Notion page export using a local integration token and parent page ID.
 
 Current data flow:
 
@@ -56,6 +57,7 @@ The app has no database, backend service, authentication, or persistent project 
   - Open questions
 - Download results as a timestamped Markdown report.
 - Include timestamped transcripts in Markdown exports when audio segment data is available.
+- Export analysis results to a simple Notion child page when Notion settings are configured locally.
 - Keep local secrets out of source control with `.env.example` and `.gitignore`.
 
 ## 4. GitHub repository status
@@ -95,6 +97,7 @@ Recommended near-term roadmap order:
 - Rule-based analysis is the default so the app works offline and without an OpenAI API key.
 - OpenAI analysis is optional to keep the architecture flexible and allow better extraction quality without making API access mandatory.
 - OpenAI credentials are loaded from `.env` through `python-dotenv`, keeping secrets out of committed files.
+- Notion credentials are also loaded from `.env`; the app creates simple child pages and does not use databases, OAuth, or sync.
 - OpenAI analysis currently uses `gpt-4.1-mini`, balancing capability and cost for structured meeting-note extraction.
 - OpenAI responses are requested as JSON and normalized before use, so UI rendering can rely on the same shape for both local and AI analysis.
 - Audio transcription uses open-source Whisper locally, so uploaded audio is not sent to the OpenAI API by the transcription path.
@@ -122,6 +125,7 @@ Highest-value next work:
 - There are no automated tests yet.
 - There is no persistence of uploaded files, transcripts, analyses, or reports.
 - There is no authentication, multi-user model, project/workspace concept, or role-based access.
+- Notion export requires a Notion integration token and a shared parent page.
 - Audio transcription requires `ffmpeg` to be installed and available on `PATH`.
 - The first local Whisper run may download model weights and can be slow.
 - Larger audio files may be slow or memory-intensive depending on the machine.
@@ -175,6 +179,8 @@ Edit `.env`:
 
 ```env
 OPENAI_API_KEY=your_api_key_here
+NOTION_TOKEN=your_notion_integration_token_here
+NOTION_PARENT_PAGE_ID=your_notion_parent_page_id_here
 ```
 
 6. Run the app:
@@ -195,6 +201,7 @@ The app remains usable without `.env` or `OPENAI_API_KEY` by using rule-based an
 - `normalize_analysis` protects the UI from missing fields or non-list values in AI output.
 - `format_markdown_list` writes `- None found` for empty sections in exported reports.
 - `build_markdown_report` includes timestamped transcript lines when audio segments are available, but does not include source filename, model name, owner fields, or due dates.
+- `notion_exporter.py` creates one child page with simple headings, paragraphs, and bulleted lists.
 - The OpenAI client is imported lazily inside `analyze_with_openai`, so the app can still run rule-based mode even if OpenAI configuration is not used.
 - `audio_transcriber.py` writes uploaded audio bytes to a temporary file because Whisper expects a file path.
 - `audio_transcriber.py` converts Whisper segment output into simple `{start, end, text, speaker}` dictionaries.
