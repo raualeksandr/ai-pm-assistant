@@ -89,6 +89,12 @@ if "analysis_source_text" not in st.session_state:
 if "analysis_transcript_segments" not in st.session_state:
     st.session_state["analysis_transcript_segments"] = []
 
+if "notion_token" not in st.session_state:
+    st.session_state["notion_token"] = ""
+
+if "notion_parent_page_id" not in st.session_state:
+    st.session_state["notion_parent_page_id"] = ""
+
 uploaded_file = st.file_uploader(
     "Upload meeting notes",
     type=["txt", "md"],
@@ -229,10 +235,27 @@ if analysis:
         mime="text/markdown",
     )
 
+    with st.expander("Notion export settings"):
+        st.caption(
+            "You can either enter Notion settings here for this session or "
+            "configure them in .env."
+        )
+        st.text_input(
+            "Notion integration token",
+            key="notion_token",
+            type="password",
+        )
+        st.text_input(
+            "Notion parent page ID",
+            key="notion_parent_page_id",
+        )
+
     if st.button("Export to Notion"):
         result = export_analysis_to_notion(
             analysis,
             transcript_segments=analysis_transcript_segments,
+            notion_token=st.session_state["notion_token"].strip() or None,
+            parent_page_id=st.session_state["notion_parent_page_id"].strip() or None,
         )
         if result["success"]:
             st.success(f"Exported to Notion: {result['url']}")

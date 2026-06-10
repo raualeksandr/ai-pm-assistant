@@ -151,7 +151,7 @@ The app works without an API key by using rule-based analysis.
 
 6. Optional: configure Notion export.
 
-Create a Notion integration, copy its internal integration token into `.env`, share the target Notion page with that integration, and copy the target page ID into `.env`:
+Create a Notion integration and share the target Notion page with that integration. You can either enter the integration token and parent page ID directly in the app after analysis, or store them in `.env`:
 
 ```env
 NOTION_TOKEN=your_notion_integration_token_here
@@ -192,7 +192,9 @@ streamlit run app.py
 
 8. Click `Download Report` to export the results as a Markdown file.
 
-9. If Notion is configured, click `Export to Notion` to create a child page under the configured parent page.
+9. Open `Notion export settings` to enter Notion settings for the current session, or leave them blank to use `.env`.
+
+10. Click `Export to Notion` to create a child page under the configured parent page.
 
 ## Future Roadmap
 
@@ -238,4 +240,4 @@ ai-pm-assistant/
 - `.env.example` is tracked so other contributors know which environment variables are required.
 - The default rule-based analyzer keeps the MVP usable without paid API access or external services.
 - Audio transcription runs locally, but the first Whisper run may download the selected model.
-- Notion export is optional and uses only local `.env` configuration.
+- Notion export is optional and can use session-only UI settings or local `.env` configuration.

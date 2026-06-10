@@ -9,17 +9,20 @@ Analysis = dict[str, str | list[str]]
 TranscriptSegment = dict[str, str | float]
 
 
-def load_notion_config() -> dict[str, str | None]:
+def load_notion_config(
+    notion_token: str | None = None,
+    parent_page_id: str | None = None,
+) -> dict[str, str | None]:
     load_dotenv()
 
-    token = os.getenv("NOTION_TOKEN")
-    parent_page_id = os.getenv("NOTION_PARENT_PAGE_ID")
+    token = notion_token or os.getenv("NOTION_TOKEN")
+    page_id = parent_page_id or os.getenv("NOTION_PARENT_PAGE_ID")
     missing = []
 
     if not token:
         missing.append("NOTION_TOKEN")
 
-    if not parent_page_id:
+    if not page_id:
         missing.append("NOTION_PARENT_PAGE_ID")
 
     error = None
@@ -28,7 +31,7 @@ def load_notion_config() -> dict[str, str | None]:
 
     return {
         "token": token,
-        "parent_page_id": parent_page_id,
+        "parent_page_id": page_id,
         "error": error,
     }
 
@@ -37,8 +40,13 @@ def export_analysis_to_notion(
     analysis: Analysis,
     transcript_segments: list[TranscriptSegment] | None = None,
     title: str | None = None,
+    notion_token: str | None = None,
+    parent_page_id: str | None = None,
 ) -> dict[str, Any]:
-    config = load_notion_config()
+    config = load_notion_config(
+        notion_token=notion_token,
+        parent_page_id=parent_page_id,
+    )
     if config["error"]:
         return {"success": False, "error": config["error"]}
 
