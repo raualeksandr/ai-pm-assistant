@@ -3,7 +3,10 @@ from datetime import datetime
 import streamlit as st
 
 from ai_analyzer import analyze_rule_based, analyze_with_openai, has_openai_api_key
-from audio_transcriber import transcribe_audio
+from audio_transcriber import format_timestamp, transcribe_audio
+
+
+TranscriptSegment = dict[str, str | float]
 
 
 def render_list(items: list[str]) -> None:
@@ -18,20 +21,48 @@ def format_markdown_list(items: list[str]) -> str:
     return "\n".join(f"- {item}" for item in items)
 
 
-def build_markdown_report(analysis: dict[str, str | list[str]]) -> str:
-    return "\n\n".join(
+def format_transcript_segment(segment: TranscriptSegment) -> str:
+    start = format_timestamp(float(segment.get("start", 0)))
+    end = format_timestamp(float(segment.get("end", 0)))
+    speaker = str(segment.get("speaker", "Speaker 1"))
+    text = str(segment.get("text", "")).strip()
+    return f"[{start} - {end}] {speaker}: {text}"
+
+
+def format_markdown_transcript(segments: list[TranscriptSegment]) -> str:
+    return "\n".join(format_transcript_segment(segment) for segment in segments)
+
+
+def build_markdown_report(
+    analysis: dict[str, str | list[str]],
+    transcript_segments: list[TranscriptSegment] | None = None,
+) -> str:
+    sections = ["# Meeting Report"]
+
+    if transcript_segments:
+        sections.extend(
+            [
+                "## Transcript",
+                format_markdown_transcript(transcript_segments),
+            ]
+        )
+
+    sections.extend(
         [
-            "# Meeting Report",
             "## Summary",
             str(analysis["summary"]),
             "## Key decisions",
             format_markdown_list(analysis["key_decisions"]),
             "## Action items",
             format_markdown_list(analysis["action_items"]),
+            "## Risks",
+            format_markdown_list(analysis["risks"]),
             "## Open questions",
             format_markdown_list(analysis["open_questions"]),
         ]
     )
+
+    return "\n\n".join(sections)
 
 
 st.set_page_config(page_title="AI Project Manager Assistant", page_icon="PM")
@@ -41,6 +72,12 @@ st.write("Paste meeting notes below and analyze them into project-management out
 
 if "meeting_notes" not in st.session_state:
     st.session_state["meeting_notes"] = ""
+
+if "transcript_segments" not in st.session_state:
+    st.session_state["transcript_segments"] = []
+
+if "transcript_text" not in st.session_state:
+    st.session_state["transcript_text"] = ""
 
 uploaded_file = st.file_uploader(
     "Upload meeting notes",
@@ -54,6 +91,8 @@ if uploaded_file is not None:
             "utf-8",
             errors="replace",
         )
+        st.session_state["transcript_segments"] = []
+        st.session_state["transcript_text"] = ""
         st.session_state["last_text_file"] = text_file_signature
 
     st.caption(f"Uploaded file: {uploaded_file.name}")
@@ -74,11 +113,14 @@ if uploaded_audio is not None:
     if st.session_state.get("last_audio_file") != audio_file_signature:
         with st.spinner("Transcribing audio locally..."):
             try:
-                st.session_state["meeting_notes"] = transcribe_audio(
+                transcript_text, transcript_segments = transcribe_audio(
                     uploaded_audio.getvalue(),
                     uploaded_audio.name,
                     whisper_model,
                 )
+                st.session_state["meeting_notes"] = transcript_text
+                st.session_state["transcript_text"] = transcript_text
+                st.session_state["transcript_segments"] = transcript_segments
                 st.session_state["last_audio_file"] = audio_file_signature
             except Exception as error:
                 st.error(
@@ -93,6 +135,17 @@ meeting_notes = st.text_area(
     height=300,
     placeholder="Paste meeting notes here...",
 )
+
+current_transcript_segments = (
+    st.session_state["transcript_segments"]
+    if meeting_notes == st.session_state.get("transcript_text")
+    else []
+)
+
+if current_transcript_segments:
+    st.subheader("Transcript with timestamps")
+    for segment in current_transcript_segments:
+        st.write(format_transcript_segment(segment))
 
 analysis_mode = st.radio(
     "Analysis mode",
@@ -132,10 +185,13 @@ if st.button("Analyze", type="primary"):
         st.subheader("Action items")
         render_list(analysis["action_items"])
 
+        st.subheader("Risks")
+        render_list(analysis["risks"])
+
         st.subheader("Open questions")
         render_list(analysis["open_questions"])
 
-        report = build_markdown_report(analysis)
+        report = build_markdown_report(analysis, current_transcript_segments)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
         st.download_button(

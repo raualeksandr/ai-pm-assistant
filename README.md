@@ -1,6 +1,6 @@
 # AI PM Assistant
 
-AI PM Assistant is a lightweight Streamlit application that turns meeting notes into practical project-management outputs. It is designed as an MVP for recruiters, Project Managers, Business Analysts, and Product Managers who want to quickly review project discussions, capture decisions, identify action items, and surface unresolved questions.
+AI PM Assistant is a lightweight Streamlit application that turns meeting notes into practical project-management outputs. It is designed as an MVP for recruiters, Project Managers, Business Analysts, and Product Managers who want to quickly review project discussions, capture decisions, identify action items, flag risks, and surface unresolved questions.
 
 The current version supports rule-based analysis by default and includes OpenAI integration support for future AI-powered analysis when an API key is provided locally.
 
@@ -9,14 +9,17 @@ The current version supports rule-based analysis by default and includes OpenAI 
 - Paste meeting notes into a large editable text area.
 - Upload `.txt` or `.md` meeting-note files.
 - Upload `.mp3`, `.wav`, or `.m4a` audio files and transcribe them locally.
-- Analyze notes using a simple rule-based analyzer.
+- Review timestamped transcript segments for audio uploads.
+- Analyze notes using a simple rule-based analyzer with PM Analysis 2.0 risk extraction.
 - Optional OpenAI analysis mode with rule-based fallback.
 - Extract and display:
   - Summary
   - Key decisions
   - Action items
+  - Risks
   - Open questions
 - Download the analysis as a Markdown report.
+- Include timestamped audio transcripts in Markdown reports when available.
 - Keep secrets out of source control with `.env.example` and `.gitignore`.
 
 ## Architecture
@@ -47,7 +50,7 @@ Analyzer layer (ai_analyzer.py)
         +-- OpenAI analyzer, optional
         |
         v
-Summary, decisions, actions, questions, Markdown export
+Summary, decisions, actions, risks, questions, Markdown export
 ```
 
 ## Screenshots
@@ -136,9 +139,11 @@ streamlit run app.py
 
 5. Click `Analyze`.
 
-6. Review the generated summary, key decisions, action items, and open questions.
+6. Review the generated summary, key decisions, action items, risks, and open questions.
 
-7. Click `Download Report` to export the results as a Markdown file.
+7. For audio uploads, review the timestamped transcript lines above the analysis controls.
+
+8. Click `Download Report` to export the results as a Markdown file.
 
 ## Future Roadmap
 
@@ -150,7 +155,7 @@ streamlit run app.py
 - Add tests for the rule-based analyzer.
 - Add deployment instructions.
 - Add screenshots and a short demo GIF.
-- Add speaker labels and timestamps for audio transcripts.
+- Improve speaker labels for audio transcripts.
 
 ## Technologies Used
 

@@ -7,6 +7,19 @@ from dotenv import load_dotenv
 
 ACTION_KEYWORDS = ("need to", "should", "must", "action", "task")
 DECISION_KEYWORDS = ("decided", "agreed", "approved")
+RISK_KEYWORDS = (
+    "risk",
+    "blocker",
+    "issue",
+    "concern",
+    "problem",
+    "delay",
+    "dependency",
+    "cannot",
+    "blocked",
+    "stuck",
+    "at risk",
+)
 
 
 def split_sentences(text: str) -> list[str]:
@@ -31,6 +44,11 @@ def analyze_rule_based(text: str) -> dict[str, str | list[str]]:
         for sentence, lowercase_sentence in lowercase_sentences
         if any(keyword in lowercase_sentence for keyword in ACTION_KEYWORDS)
     ]
+    risks = [
+        sentence
+        for sentence, lowercase_sentence in lowercase_sentences
+        if any(keyword in lowercase_sentence for keyword in RISK_KEYWORDS)
+    ]
     open_questions = [
         sentence
         for sentence in sentences
@@ -46,6 +64,7 @@ def analyze_rule_based(text: str) -> dict[str, str | list[str]]:
         "summary": summary,
         "key_decisions": key_decisions,
         "action_items": action_items,
+        "risks": risks,
         "open_questions": open_questions,
     }
 
@@ -73,10 +92,10 @@ def analyze_with_openai(text: str) -> dict[str, str | list[str]]:
             {
                 "role": "system",
                 "content": (
-                    "Analyze meeting notes for a project manager. Return only JSON "
-                    "with these keys: summary, key_decisions, action_items, "
-                    "open_questions. The summary must be a string. The other "
-                    "fields must be arrays of strings."
+                    "Analyze meeting notes for a project manager. Return only valid "
+                    "JSON with exactly these keys: summary, key_decisions, "
+                    "action_items, risks, open_questions. The summary must be a "
+                    "string. The other fields must be arrays of strings."
                 ),
             },
             {
@@ -94,6 +113,7 @@ def normalize_analysis(analysis: dict) -> dict[str, str | list[str]]:
         "summary": str(analysis.get("summary", "")).strip(),
         "key_decisions": ensure_string_list(analysis.get("key_decisions", [])),
         "action_items": ensure_string_list(analysis.get("action_items", [])),
+        "risks": ensure_string_list(analysis.get("risks", [])),
         "open_questions": ensure_string_list(analysis.get("open_questions", [])),
     }
 
