@@ -2,7 +2,17 @@
 
 AI PM Assistant is a lightweight Streamlit application that turns meeting notes into practical project-management outputs. It is designed as an MVP for recruiters, Project Managers, Business Analysts, and Product Managers who want to quickly review project discussions, capture decisions, identify action items, flag risks, and surface unresolved questions.
 
-The current version supports rule-based analysis by default and includes OpenAI integration support for future AI-powered analysis when an API key is provided locally.
+The app works locally with rule-based analysis by default, supports optional OpenAI analysis when an API key is provided, transcribes audio with local Whisper, and can export reports to Markdown or a simple Notion page.
+
+## Portfolio Value
+
+This project demonstrates a practical AI product workflow without hiding the core logic behind heavy frameworks. It shows:
+
+- End-to-end product thinking from raw meeting input to PM-ready outputs.
+- Local-first defaults with optional AI and Notion integrations.
+- Simple, readable Python modules that are easy to review in a portfolio.
+- Real PM use cases: summaries, decisions, action items, risks, questions, transcripts, and exports.
+- Sensible scope control: no database, auth layer, backend service, agents, or complex deployment stack.
 
 ## Features
 
@@ -24,6 +34,35 @@ The current version supports rule-based analysis by default and includes OpenAI 
 - Export the analysis to Notion when local Notion settings are configured.
 - Keep secrets out of source control with `.env.example` and `.gitignore`.
 
+## Demo Usage
+
+Try this sample note in the app:
+
+```text
+The team approved the beta launch for July. Design needs to finish the onboarding screens by Friday. The payment API dependency is blocked, so the release timeline is at risk. Can support prepare the customer FAQ before launch?
+```
+
+Expected output:
+
+- Summary of the meeting note.
+- Key decision: beta launch approved.
+- Action items for design and support.
+- Risk related to the blocked payment API dependency.
+- Open question about customer FAQ preparation.
+- Markdown download, plus optional Notion export when configured.
+
+For an audio demo, upload an `.mp3`, `.wav`, or `.m4a` file and review the timestamped transcript before exporting the report.
+
+## Screenshots and Demo GIF
+
+Placeholders for portfolio assets:
+
+- `docs/screenshots/main-input.png` - note input, upload controls, and analysis mode.
+- `docs/screenshots/analysis-results.png` - summary, decisions, actions, risks, and questions.
+- `docs/screenshots/timestamped-transcript.png` - audio transcript with timestamps.
+- `docs/screenshots/notion-export.png` - generated Notion page.
+- `docs/demo.gif` - short end-to-end demo from note input to export.
+
 ## Architecture
 
 The project is intentionally small and easy to understand:
@@ -31,6 +70,7 @@ The project is intentionally small and easy to understand:
 - `app.py` contains the Streamlit user interface.
 - `ai_analyzer.py` contains analysis logic.
 - `audio_transcriber.py` contains local Whisper transcription logic.
+- `notion_exporter.py` contains optional Notion page export logic.
 - Rule-based analysis is the default path and requires no API key.
 - OpenAI analysis is available as an optional mode.
 - If `OPENAI_API_KEY` is missing or the OpenAI request fails, the app falls back to rule-based analysis.
@@ -52,18 +92,8 @@ Analyzer layer (ai_analyzer.py)
         +-- OpenAI analyzer, optional
         |
         v
-Summary, decisions, actions, risks, questions, Markdown export
+Summary, decisions, actions, risks, questions, Markdown and Notion export
 ```
-
-## Screenshots
-
-Screenshots will be added as the UI evolves.
-
-Suggested placeholders:
-
-- Main note input screen
-- Analysis results screen
-- Markdown report download flow
 
 ## Installation
 
@@ -87,7 +117,7 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-4. Install `ffmpeg` for local audio transcription.
+4. Optional for audio transcription: install `ffmpeg`.
 
 Whisper requires the `ffmpeg` system binary to read `.mp3`, `.wav`, and `.m4a` files.
 
@@ -130,7 +160,13 @@ NOTION_PARENT_PAGE_ID=your_notion_parent_page_id_here
 
 ## Usage
 
-1. Start the Streamlit app:
+1. Start the Streamlit app with the helper script on Windows:
+
+```bat
+start.bat
+```
+
+Or run Streamlit directly:
 
 ```bash
 streamlit run app.py
@@ -191,7 +227,9 @@ ai-pm-assistant/
 +-- ai_analyzer.py
 +-- audio_transcriber.py
 +-- app.py
++-- notion_exporter.py
 +-- requirements.txt
++-- start.bat
 ```
 
 ## Notes
